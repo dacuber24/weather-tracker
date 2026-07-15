@@ -37,6 +37,9 @@ def get_forecast(lat, lon):
     response = requests.get(url, params=params)
     return response.json()
 
+today = date.today()
+current_year = today.year
+
 # Collect historical data for the last 5 years
 all_data = []
 
