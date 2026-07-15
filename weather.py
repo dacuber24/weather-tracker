@@ -36,3 +36,50 @@ def get_forecast(lat, lon):
     }
     response = requests.get(url, params=params)
     return response.json()
+
+# Collect historical data for the last 5 years
+all_data = []
+
+for year in range(current_year - 5, current_year):
+    start = date(year, CAMP_MONTH, CAMP_START_DAY)
+    end = date(year, CAMP_MONTH, CAMP_END_DAY)
+    data = get_historical_weather(LATITUDE, LONGITUDE, start, end)
+    all_data.append(data)
+    print(f"Fetched data for {year}")
+
+# Convert to DataFrames and combine
+dfs = []
+for year_data in all_data:
+    df = pd.DataFrame({
+        "date": year_data["daily"]["time"],
+        "max_temp": year_data["daily"]["temperature_2m_max"],
+        "min_temp": year_data["daily"]["temperature_2m_min"]
+    })
+    dfs.append(df)
+
+historical_df = pd.concat(dfs, ignore_index=True)
+
+# Get the 7-day forecast
+forecast_data = get_forecast(LATITUDE, LONGITUDE)
+forecast_df = pd.DataFrame({
+    "date": forecast_data["daily"]["time"],
+    "max_temp": forecast_data["daily"]["temperature_2m_max"],
+    "min_temp": forecast_data["daily"]["temperature_2m_min"]
+})
+
+# Results
+print(f"Weather analysis for {LOCATION_NAME}")
+print("=" * 40)
+
+print("\n--- Historical Averages (last 5 years, your camping dates) ---")
+print(historical_df)
+print(f"\nAverage High: {historical_df['max_temp'].mean():.1f}°C")
+print(f"Average Low: {historical_df['min_temp'].mean():.1f}°C")
+
+print("\n--- 7-Day Forecast ---")
+print(forecast_df)
+
+# Save to CSV
+historical_df.to_csv("historical_weather.csv", index=False)
+forecast_df.to_csv("forecast_weather.csv", index=False)
+print("\nData saved to CSV files.")
